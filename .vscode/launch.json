@@ -1,0 +1,69 @@
+// {
+//     "version": "0.2.0",
+//     "configurations": [
+//         {
+//             "name": "C++ Launch (GDB)",
+//             "type": "cppdbg",
+//             "request": "launch",
+//             "launchOptionType": "Local",
+//             "targetArchitecture": "x64",
+//             "program": "enter program name, for example ${workspaceRoot}/a.out",
+//             "args": [],
+//             "stopAtEntry": false,
+//             "cwd": "${workspaceRoot}",
+//             "environment": [],
+//             "externalConsole": true
+//         },
+//         {
+//             "name": "C++ Attach (GDB)",
+//             "type": "cppdbg",
+//             "request": "launch",
+//             "launchOptionType": "Local",
+//             "targetArchitecture": "x64",
+//             "program": "enter program name, for example ${workspaceRoot}/a.out",
+//             "args": [],
+//             "stopAtEntry": false,
+//             "cwd": "${workspaceRoot}",
+//             "environment": [],
+//             "processId": "enter program's process ID",
+//             "externalConsole": false
+//         }
+//     ]
+// }
+
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "C++ Launch (GDB)",
+            "type": "gdb",
+            "request": "launch",
+            // "launchOptionType": "Local",
+            // "targetArchitecture": "x86",
+            // "program": "/media/d/OI/program/leetcode/77/77",
+            // "args": [],
+            // "stopAtEntry": false,
+            // "target": "./84/84",
+            "target": "${file}.o",
+            "cwd": "${workspaceRoot}",
+            "preLaunchTask": "gcc"
+            // "environment": [],
+            // "externalConsole": "target"
+        }
+        // },
+        // {
+        //     "name": "C++ Attach (GDB)",
+        //     "type": "cppdbg",
+        //     "request": "launch",
+        //     "launchOptionType": "Local",
+        //     "targetArchitecture": "x86",
+        //     "program": "/media/d/OI/program/leetcode/77/77",
+        //     "args": [],
+        //     "stopAtEntry": false,
+        //     "cwd": "${workspaceRoot}",
+        //     "environment": [],
+        //     "processId": "enter program's process ID",
+        //     "externalConsole": false
+        // }
+    ]
+}
