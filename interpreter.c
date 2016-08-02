@@ -83,9 +83,7 @@ int eval() {
         } else if (op == LI) {
             ax = *(int*)ax;
         } else if (op == SC) {
-            // ax = *(char*)*sp++ = ax;
-            // the above code is from origin article
-            *(char*)*sp++ = ax;
+            ax = *(char*)*sp++ = ax;
         } else if (op == SI) {
             *(int*)*sp++ = ax;
         } else if (op == PUSH) {
@@ -206,6 +204,10 @@ int main(int argc, char **argv) {
         printf("Could not malloc(%d) for data area \n", poolsize);
         return -1;
     }
+    if ( ! (stack = malloc(poolsize))) {
+        printf("Could not malloc(%d) for stack area \n", poolsize);
+        return -1;
+    } 
     memset(text, 0, poolsize);
     memset(data, 0, poolsize);
     memset(stack, 0, poolsize);
