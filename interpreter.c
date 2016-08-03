@@ -69,6 +69,8 @@ int eval() {
     int op;
     int *tmp;
     while (1) {
+        op = *pc++;
+
         /**
          * IMM<num> is to put <num> into register ax,
          * LC is to put the corresbonding address' character into ax, requiring ax stores address,
@@ -76,7 +78,7 @@ int eval() {
          * SC puts the data in ax into the address as a character, requiring the top of the stack stores address,
          * SI puts the data in ax into the address as an integer, requiring the top of the stack stores address
          */
-        if(op == IMM) {
+        if (op == IMM) {
             ax = *pc++;
         } else if (op == LC) {
             ax = *(char*)ax;
