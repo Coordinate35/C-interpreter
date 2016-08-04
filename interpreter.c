@@ -277,13 +277,6 @@ void next() {
     return;
 }
 
-/**
- * For analyzing an expression
- */
-void expression(int level) {
-    // do nothing
-}
-
 void match(int tk) {
     if (token == tk) {
         next();
@@ -291,6 +284,157 @@ void match(int tk) {
         printf("%d: expected token: %d\n", line, tk);
         exit(-1);
     }
+}
+
+/**
+ * For analyzing an expression
+ */
+void expression(int level) {
+    // do nothing
+}
+
+void statement() {
+    // there are 6 kinds of statements here:
+    // 1. if (...) <statement> [else <statement>]
+    // 2. while (...) <statement>
+    // 3. { <statement> }
+    // 4. return xxx;
+    // 5. <empty statement>;
+    // 6. expression; (expression end with semicolon)
+    
+    int *a, *b; // bess for branch controll
+
+    if (token == If) {
+        // if (...) <statement> [else <statement>]
+        //
+        //   if (...)           <cond>
+        //                      JZ a
+        //     <statement>      <statement>
+        //   else:              JMP b
+        // a:                 a:
+        //     <statement>      <statement>
+        // b:                 b:
+
+        match(If);
+        match('(');
+        expression(Assign); // parse condition
+        match(')');
+
+        // emit code for if
+        *++text = JZ;
+        b = ++text;
+
+        statement(); // parse statement
+        if (token == Else) { //parse else
+            match(Else);
+
+            // emit code for JMP B
+            *b = (int)(text + 3);
+            *++text = JMP;
+            b = ++text;
+
+            statement();
+        }
+        *b = (int)(text + 1);
+    } else if (token == While) {
+        //
+        // a:                     a:
+        //    while (<cond>)        <cond>
+        //                          JZ b
+        //     <statement>          <statement>
+        //                          JMP a
+        // b:                     b:
+        match(While);
+        a = text + 1;
+        match('(');
+        expression(Assign);
+        match(')');
+
+        *++text = JZ;
+        b = ++text;
+
+        statement();
+
+        *++text = JMP;
+        *++text = (int)a;
+        *b = (int)(text + 1);
+    } else if (token == '{') {
+        // {<statement> ...}
+        match('{');
+
+        while (token != '}') {
+            statement();
+        }
+
+        match('}');
+    } else if (token == Return) {
+        // return [expression];
+        match(Return);
+
+        if (token != ';') {
+            expression(Assign);
+        }
+
+        match(';');
+
+        // emit code for return
+        *++text = LEV;
+    } else if (token == ';') {
+        // empty statement
+        match(';');
+    } else {
+        // a = b; or function_call();
+        expression(Assign);
+        match(';');
+    }
+}
+
+void function_parameter() {
+    int type;
+    int params;
+    params = 0;
+    while (token != ')') {
+        // int name, ...
+        type = INT;
+        if (token == Int) {
+            match(Int);
+        } else if (token == Char) {
+            type = CHAR;
+            match(Char);
+        }
+
+        // pointer type
+        while (token == Mul) {
+            match(Mul);
+            type = type + PTR;
+        }
+
+        // parameter name
+        if (token != Id) {
+            printf("%d: bad parameter declaration \n", line);
+            exit(-1);
+        }
+        if (current_id[Class] == Loc) {
+            printf("%d: duplicate parameter declaration\n", line);
+            exit(-1);
+        }
+
+        match(Id);
+
+        // store the local variable
+        current_id[BClass] = current_id[Class];
+        current_id[Class] = Loc;
+        current_id[BType] = current_id[Type];
+        current_id[Type] = type;
+        current_id[BValue] = current_id[Value];
+        current_id[Value] = params++;
+
+        if (token == ',') {
+            match(',');
+        } 
+    }
+
+    index_of_bp = params + 1;
 }
 
 void function_body() {
@@ -356,54 +500,6 @@ void function_body() {
 
     // emit code for leaving the sub function
     *++text = LEV;
-}
-
-void function_parameter() {
-    int type;
-    int params;
-    params = 0;
-    while (token != ')') {
-        // int name, ...
-        type = INT;
-        if (token == Int) {
-            match(Int);
-        } else if (token == Char) {
-            type = CHAR;
-            match(Char);
-        }
-
-        // pointer type
-        while (token == Mul) {
-            match(Mul);
-            type = type + PTR;
-        }
-
-        // parameter name
-        if (token != Id) {
-            printf("%d: bad parameter declaration \n", line);
-            exit(-1);
-        }
-        if (current_id[Class] == Loc) {
-            printf("%d: duplicate parameter declaration\n", line);
-            exit(-1);
-        }
-
-        match(Id);
-
-        // store the local variable
-        current_id[BClass] = current_id[Class];
-        current_id[Class] = Loc;
-        current_id[BType] = current_id[Type];
-        current_id[Type] = type;
-        current_id[BValue] = current_id[Value];
-        current_id[Value] = params++;
-
-        if (token == ',') {
-            match(',');
-        } 
-    }
-
-    index_of_bp = params + 1;
 }
 
 void function_declaration() {
