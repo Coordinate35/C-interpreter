@@ -136,7 +136,7 @@ void next() {
                     // hex
                     token = *++src;
                     while (((token >= '0') && (token <= '9')) || ((token >= 'a') && (token <= 'f')) || ((token >= 'A') && (token <= 'F'))) {
-                        token_val = token_val * 16 + (token & 5) + (token >= 'A' ? 9 : 0);
+                        token_val = token_val * 16 + (token & 15) + (token >= 'A' ? 9 : 0);
                         token = *++src;
                     }
                 } else {
@@ -203,6 +203,15 @@ void next() {
                 token = Inc;
             } else {
                 token = Add;
+            }
+            return;
+        } else if (token == '-') {
+            // parse '-' and '--'
+            if (*src == '-') {
+                src++;
+                token = Dec;
+            } else {
+                token = Sub;
             }
             return;
         } else if (token == '!') {
@@ -658,8 +667,8 @@ void expression(int level) {
             // shift left
             match(Shl);
             *++text = PUSH;
-            expression(Shl);
-            *++text = GE;
+            expression(Add);
+            *++text = SHL;
             expr_type = INT;
         } else if (token == Shr) {
             // shift right
@@ -1242,6 +1251,7 @@ int eval() {
 
 int main(int argc, char **argv) {
     int i, fd;
+    int *tmp;
     
     argc--;
     argv++;
@@ -1253,19 +1263,6 @@ int main(int argc, char **argv) {
         printf("Could not open(%s)\n", *argv);
         return -1;
     }
-
-    if ( ! (src = old_src = malloc(poolsize))) {
-        printf("Could not malloc(%d) for source area\n", poolsize);
-        return -1;
-    }
-
-    // read the source file
-    if ((i = read(fd, src, poolsize - 1)) <= 0) {
-        printf("read() returned %d\n", i);
-        return -1;
-    }
-    src[i] = 0;
-    close(fd);
 
     // allocate memory for virtual machine
     if ( ! (text = old_text = malloc(poolsize))) {
@@ -1280,9 +1277,14 @@ int main(int argc, char **argv) {
         printf("Could not malloc(%d) for stack area \n", poolsize);
         return -1;
     } 
+    if ( ! (symbols = malloc(poolsize))) {
+        printf("could not malloc(%d) for symbol table\n", poolsize);
+        return -1;
+    }
     memset(text, 0, poolsize);
     memset(data, 0, poolsize);
     memset(stack, 0, poolsize);
+    memset(symbols, 0, poolsize);
 
     bp = sp = (int*)((int)stack + poolsize); 
     ax = 0;
@@ -1312,6 +1314,38 @@ int main(int argc, char **argv) {
     next();
     idmain = current_id;
 
+    if ((fd = open(*argv, 0)) < 0) {
+        printf("Could not open(%s)\n", *argv);
+        return -1;
+    }
+
+    if ( ! (src = old_src = malloc(poolsize))) {
+        printf("Could not malloc(%d) for source area\n", poolsize);
+        return -1;
+    }
+
+    // read the source file
+    if ((i = read(fd, src, poolsize - 1)) <= 0) {
+        printf("read() returned %d\n", i);
+        return -1;
+    }
+    src[i] = 0;
+    close(fd);
+
     program();
+
+    if ( ! (pc = (int*)idmain[Value])) {
+        printf("main() not define\n");
+        return -1;
+    }
+
+    sp = (int*)((int)stack + poolsize);
+    *--sp = EXIT;
+    *--sp = PUSH;
+    tmp = sp;
+    *--sp = argc;
+    *--sp = (int)argv;
+    *--sp = (int)tmp;
+
     return eval();
 }
